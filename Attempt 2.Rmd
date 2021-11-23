@@ -1,0 +1,70 @@
+---
+title: "Flu Stuff"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Libraries
+
+```{r libraries - data cleaning - function writing, include = false}
+library(readr)
+library(dplyr)
+library(ggplot2)
+library(lubridate)
+library(EpiCurve)
+library(ISOweek)
+
+ILINet <- read_csv("ILINet_Georgia.csv", skip = 1 ) ##First line is a title for the file, skipped when reading in data
+View(ILINet)
+
+
+
+##Trying to write a function to add a "W" to the Week argument
+AddW <- function(x) {
+  as.character(x)
+  y = "W"
+  z = paste(y,x, sep = "")
+  return(z)
+}
+
+##Convert single digit week to two digit weeks with leading 0 (needed for formatting)
+TwoDigit <- function(x) {
+  sprintf("%02d", x)
+}
+
+
+##Formatting data into ISOweek and then converting to calendar date
+ILINet2 <- ILINet %>%
+  mutate(oweek = TwoDigit(WEEK)) %>%
+  mutate(Wweek = AddW(oweek)) %>%
+  mutate(day = 1) %>%
+  mutate(ISOweek = paste(YEAR,Wweek,day, sep = "-")) %>%
+  mutate(weekdate = ISOweek2date(ISOweek)) 
+
+
+
+
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+Figure1 <- ggplot(data = ILINet2, aes(x = as.Date(weekdate), y = ILITOTAL)) +
+  geom_area() + labs(title = "Figure 1: Reported Cases of Influenza Like Illnes in Georgia 2015-2021") +
+  scale_x_date(breaks = date_breaks("4 month"), 
+               labels = date_format("%b '%y"), 
+               name = "Date") +
+  scale_y_continuous(breaks = seq(from = 0, to = 10000, by = 1000), 
+                     limits = c(0,10000), name = "Weekly Cases of ILI") +
+  theme_classic()+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+print(Figure1)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
